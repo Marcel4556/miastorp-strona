@@ -57,32 +57,48 @@
     }
   });
 
-  // Link konta: pokazuje "Zaloguj się" albo, jeśli sesja aktywna, "Wyloguj (email)"
-  if (!menuLinks.querySelector('.nav-account')) {
-    const accountLink = document.createElement('a');
-    accountLink.className = 'nav-account';
-    accountLink.href = 'login.html';
-    accountLink.textContent = 'Zaloguj się';
-    menuLinks.insertBefore(accountLink, discordLink);
+  // Przyciski konta: "Zaloguj się" + "Zarejestruj się", albo (gdy zalogowany) jeden przycisk "Wyloguj"
+  if (!menuLinks.querySelector('.nav-login') && !menuLinks.querySelector('.nav-account')) {
+    const loginLink = document.createElement('a');
+    loginLink.className = 'nav-login';
+    loginLink.href = 'login.html';
+    loginLink.textContent = 'Zaloguj się';
+
+    const registerLink = document.createElement('a');
+    registerLink.className = 'nav-register';
+    registerLink.href = 'registration.html';
+    registerLink.textContent = 'Zarejestruj się';
+
+    discordLink.after(loginLink, registerLink);
 
     fetch('/api/me')
       .then((r) => r.json())
       .then(({ user }) => {
         if (!user) return;
-        accountLink.textContent = `Wyloguj (${user.email})`;
-        accountLink.href = '#';
-        accountLink.addEventListener('click', async (e) => {
+        registerLink.remove();
+        loginLink.className = 'nav-account';
+        loginLink.textContent = `Wyloguj (${user.email})`;
+        loginLink.href = '#';
+        loginLink.addEventListener('click', async (e) => {
           e.preventDefault();
           await fetch('/api/logout', { method: 'POST' });
           window.location.reload();
         });
       })
-      .catch(() => {}); // auth-server nieuruchomiony lub niedostępny — link zostaje jako "Zaloguj się"
+      .catch(() => {}); // auth-server nieuruchomiony lub niedostępny — przyciski zostają jako Zaloguj/Zarejestruj
   }
 
   menuButton.addEventListener('click', () => {
     const open = menuLinks.classList.toggle('is-open');
     menuButton.setAttribute('aria-expanded', String(open));
     menuButton.textContent = open ? '\u00D7' : '\u2630';
+  });
+
+  menuLinks.querySelectorAll('a').forEach((link) => {
+    link.addEventListener('click', () => {
+      menuLinks.classList.remove('is-open');
+      menuButton.setAttribute('aria-expanded', 'false');
+      menuButton.textContent = '\u2630';
+    });
   });
 })();

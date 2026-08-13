@@ -3,19 +3,53 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Resetowanie hasła</title>
-  <link rel="stylesheet" href="/css/style.css">
+  <meta name="theme-color" content="#090d16">
+  <title>Resetowanie hasła — Miasto RP</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/auth.css">
 </head>
-<body>
-  <main class="container" style="padding-top:140px;max-width:520px;">
-    <h2>Resetowanie hasła</h2>
-    <p class="large-copy">Podaj e‑mail, a wyślemy link do zresetowania hasła.</p>
-    <form id="request-reset-form" style="margin-top:20px;display:grid;gap:12px;">
-      <input type="email" id="email" placeholder="E‑mail" required style="padding:12px;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--ink)">
-      <button class="button button-primary" type="submit">Wyślij link</button>
-      <p id="msg" style="color:var(--gold)"></p>
-    </form>
+<body class="subpage auth-page">
+  <header class="site-header">
+    <nav class="nav container" aria-label="Główna nawigacja">
+      <a class="brand" href="index.html"><img src="assets/logo.png" alt="Logo Miasto RP"><span><strong>MIASTO RP</strong><small>SEZON 7</small></span></a>
+      <button class="menu-toggle" type="button" aria-label="Otwórz menu" aria-expanded="false">☰</button>
+      <div class="nav-links">
+        <a href="index.html">Strona główna</a>
+        <a href="login.html">Logowanie</a>
+        <a class="nav-discord" href="https://discord.gg/shBz4cd5N3" target="_blank" rel="noopener noreferrer">Discord <span>↗</span></a>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <section class="auth-section">
+      <div class="auth-card">
+        <span class="overline">ODZYSKAJ DOSTĘP</span>
+        <h1>Resetowanie hasła</h1>
+        <p class="auth-lead">Podaj e‑mail powiązany z kontem, a wyślemy link do zresetowania hasła.</p>
+
+        <form id="request-reset-form" class="auth-form" novalidate>
+          <div class="auth-field">
+            <label for="email">E‑mail</label>
+            <input type="email" id="email" name="email" placeholder="ty@przyklad.pl" required autocomplete="email">
+          </div>
+          <button class="button button-primary" type="submit">Wyślij link <span>→</span></button>
+          <p id="msg" class="auth-msg" role="status"></p>
+        </form>
+
+        <div class="auth-foot">
+          <p><a href="login.html">Wróć do logowania</a></p>
+        </div>
+      </div>
+    </section>
   </main>
-  <script src="/js/auth.js"></script>
+
+  <footer><div class="container footer-inner"><a class="brand" href="index.html"><img src="assets/logo.png" alt=""><span><strong>MIASTO RP</strong><small>SEZON 7</small></span></a><p>© 2026 Miasto RP.</p><a href="index.html">Wróć na stronę główną ↑</a></div></footer>
+
+  <script src="js/menu.js"></script>
+  <script src="js/auth.js"></script>
 </body>
 </html>

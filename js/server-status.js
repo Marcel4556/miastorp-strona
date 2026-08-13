@@ -1,5 +1,5 @@
 (() => {
-  const address = 'MiastoRPS7.exaroton.me';
+  const address = 'play.miastorp.pl';
   const version = '1.21.10';
   const css = document.createElement('link');
   css.rel = 'stylesheet';

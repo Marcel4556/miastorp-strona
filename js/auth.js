@@ -1,3 +1,8 @@
+function setMsg(el, text, isError) {
+  el.textContent = text;
+  el.classList.toggle('is-error', !!isError);
+}
+
 async function postJSON(url, body) {
   const res = await fetch(url, {method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body)});
   return res.json().catch(() => ({ error: 'Błąd serwera' }));
@@ -13,8 +18,8 @@ if (regForm) {
     const msg = document.getElementById('msg');
     msg.textContent = '';
     const res = await postJSON('/api/register', { email, password });
-    if (res.error) msg.textContent = res.error;
-    else msg.textContent = res.message || 'OK. Sprawdź e‑mail.';
+    if (res.error) setMsg(msg, res.error, true);
+    else setMsg(msg, res.message || 'OK. Sprawdź e‑mail.', false);
   });
 }
 
@@ -28,7 +33,7 @@ if (loginForm) {
     const msg = document.getElementById('msg');
     msg.textContent = '';
     const res = await postJSON('/api/login', { email, password });
-    if (res.error) msg.textContent = res.error;
+    if (res.error) setMsg(msg, res.error, true);
     else window.location.href = '/start.html';
   });
 }
@@ -42,8 +47,8 @@ if (reqResetForm) {
     const msg = document.getElementById('msg');
     msg.textContent = '';
     const res = await postJSON('/api/request-password-reset', { email });
-    if (res.error) msg.textContent = res.error;
-    else msg.textContent = 'Jeśli konto istnieje, wysłano link resetujący.';
+    if (res.error) setMsg(msg, res.error, true);
+    else setMsg(msg, 'Jeśli konto istnieje, wysłano link resetujący.', false);
   });
 }
 
@@ -62,9 +67,9 @@ if (resetForm) {
     const msg = document.getElementById('msg');
     msg.textContent = '';
     const res = await postJSON('/api/reset-password', { token, password });
-    if (res.error) msg.textContent = res.error;
+    if (res.error) setMsg(msg, res.error, true);
     else {
-      msg.textContent = 'Hasło zmienione. Możesz się zalogować.';
+      setMsg(msg, 'Hasło zmienione. Możesz się zalogować.', false);
       setTimeout(() => location.href = '/login.html', 1500);
     }
   });

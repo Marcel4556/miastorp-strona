@@ -83,11 +83,6 @@
     <section class="join" id="join"><div class="join-glow"></div><div class="container join-content"><p class="overline">SEZON 7 CZEKA</p><h2>Masz swoją<br>historię do <em>napisania.</em></h2><p>Dołącz do Miasto RP i stwórz coś, o czym będzie mówiło całe miasto.</p><a class="button button-primary" href="https://discord.gg/shBz4cd5N3" target="_blank" rel="noopener noreferrer">Dołącz na Discord <span>→</span></a></div></section>
   </main>
   <footer><div class="container footer-inner"><a class="brand" href="#start"><img src="assets/logo.png" alt=""><span><strong>MIASTO RP</strong><small>SEZON 7</small></span></a><p>© 2026 Miasto RP. Wszelkie prawa zastrzeżone.</p><a href="#start">Wróć na górę ↑</a></div></footer>
-  <script src="js/server-status.js"></script>
-  <script>
-    const button = document.querySelector('.menu-toggle'), links = document.querySelector('.nav-links');
-    button.addEventListener('click', () => { const open = links.classList.toggle('is-open'); button.setAttribute('aria-expanded', open); button.textContent = open ? '×' : '☰'; });
-    links.querySelectorAll('a').forEach(link => link.addEventListener('click', () => { links.classList.remove('is-open'); button.setAttribute('aria-expanded', 'false'); button.textContent = '☰'; }));
-  </script>
+  <script src="js/menu.js"></script>
 </body>
 </html>
