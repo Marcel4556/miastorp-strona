@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Rejestracja</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container nav">
+      <a class="brand" href="/index.html"><img src="/fa5fa4b8-1a20-4d0b-8c04-a6bbcb867518/logo.png" alt="logo"><span><strong>MIASTO RP</strong><small>SEZON 7</small></span></a>
+      <nav class="nav-links">
+        <a href="/index.html">Strona główna</a>
+        <a href="/start.html">Start</a>
+        <a href="/administracja.html">Administracja</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container" style="padding-top:140px;max-width:520px;">
+    <h2>Rejestracja</h2>
+    <p class="large-copy">Zarejestruj konto, aby uzyskać dostęp.</p>
+
+    <form id="register-form" style="margin-top:20px;display:grid;gap:12px;">
+      <input type="email" id="email" placeholder="E‑mail" required style="padding:12px;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--ink)">
+      <input type="password" id="password" placeholder="Hasło" required style="padding:12px;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--ink)">
+      <button class="button button-primary" type="submit">Zarejestruj</button>
+      <p id="msg" style="color:var(--gold)"></p>
+      <p style="color:var(--muted)">Masz już konto? <a href="/login.html">Zaloguj się</a></p>
+    </form>
+  </main>
+
+  <script src="/js/auth.js"></script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Resetowanie hasła</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <main class="container" style="padding-top:140px;max-width:520px;">
+    <h2>Resetowanie hasła</h2>
+    <p class="large-copy">Podaj e‑mail, a wyślemy link do zresetowania hasła.</p>
+    <form id="request-reset-form" style="margin-top:20px;display:grid;gap:12px;">
+      <input type="email" id="email" placeholder="E‑mail" required style="padding:12px;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--ink)">
+      <button class="button button-primary" type="submit">Wyślij link</button>
+      <p id="msg" style="color:var(--gold)"></p>
+    </form>
+  </main>
+  <script src="/js/auth.js"></script>
+</body>
+</html>
