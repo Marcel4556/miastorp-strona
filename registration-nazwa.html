@@ -28,19 +28,15 @@
     <section class="auth-section">
       <div class="auth-card">
         <span class="overline">DOŁĄCZ DO MIASTA</span>
-        <h1>Załóż konto</h1>
-        <p class="auth-lead">Zarejestruj się, aby uzyskać dostęp do panelu gracza.</p>
+        <h1>Wybierz nazwę</h1>
+        <p class="auth-lead">Jeszcze tylko jeden krok — podaj nazwę, pod którą będziesz widoczny/a na serwerze.</p>
 
-        <form id="register-form" class="auth-form" novalidate>
+        <form id="register-name-form" class="auth-form" novalidate>
           <div class="auth-field">
-            <label for="email">E‑mail</label>
-            <input type="email" id="email" name="email" placeholder="ty@przyklad.pl" required autocomplete="email">
+            <label for="username">Nazwa</label>
+            <input type="text" id="username" name="username" placeholder="Twoja nazwa" required minlength="3" maxlength="20" autocomplete="nickname">
           </div>
-          <div class="auth-field">
-            <label for="password">Hasło</label>
-            <input type="password" id="password" name="password" placeholder="Minimum 8 znaków" required autocomplete="new-password" minlength="8">
-          </div>
-          <button class="button button-primary" type="submit">Dalej <span>→</span></button>
+          <button class="button button-primary" type="submit">Zarejestruj się <span>→</span></button>
           <p id="msg" class="auth-msg" role="status"></p>
         </form>
 

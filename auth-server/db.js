@@ -12,11 +12,14 @@ async function init() {
     id TEXT PRIMARY KEY,
     email TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
+    username TEXT,
     verified INTEGER DEFAULT 0,
     verification_token TEXT,
     reset_token TEXT,
     created_at BIGINT
   )`);
+  // Migracja dla baz utworzonych przed dodaniem kolumny "username"
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS username TEXT`);
 }
 
 module.exports = { pool, init };

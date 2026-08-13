@@ -8,22 +8,58 @@ async function postJSON(url, body) {
   return res.json().catch(() => ({ error: 'Błąd serwera' }));
 }
 
-// Registration
+// Registration — krok 1: e‑mail i hasło, potem przejście na stronę z nazwą
 const regForm = document.getElementById('register-form');
 if (regForm) {
-  regForm.addEventListener('submit', async (e) => {
+  regForm.addEventListener('submit', (e) => {
     e.preventDefault();
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
     const msg = document.getElementById('msg');
     msg.textContent = '';
-    const res = await postJSON('/api/register', { email, password });
-    if (res.error) setMsg(msg, res.error, true);
-    else {
-      setMsg(msg, res.message || 'Konto utworzone. Jesteś zalogowany.', false);
-      setTimeout(() => window.location.href = '/start.html', 800);
+
+    if (!regForm.checkValidity()) {
+      setMsg(msg, 'Uzupełnij poprawnie e‑mail i hasło (min. 8 znaków).', true);
+      return;
     }
+
+    sessionStorage.setItem('reg_email', email);
+    sessionStorage.setItem('reg_password', password);
+    window.location.href = 'registration-nazwa.html';
   });
+}
+
+// Registration — krok 2: nazwa, wysyłka pełnej rejestracji do serwera
+const regNameForm = document.getElementById('register-name-form');
+if (regNameForm) {
+  const msg = document.getElementById('msg');
+  const email = sessionStorage.getItem('reg_email');
+  const password = sessionStorage.getItem('reg_password');
+
+  if (!email || !password) {
+    // Brak danych z pierwszego kroku — wróć do początku rejestracji
+    window.location.href = 'registration.html';
+  } else {
+    regNameForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const username = document.getElementById('username').value;
+      msg.textContent = '';
+
+      if (!regNameForm.checkValidity()) {
+        setMsg(msg, 'Podaj nazwę (min. 3 znaki).', true);
+        return;
+      }
+
+      const res = await postJSON('/api/register', { email, password, username });
+      if (res.error) {
+        setMsg(msg, res.error, true);
+      } else {
+        sessionStorage.removeItem('reg_email');
+        sessionStorage.removeItem('reg_password');
+        setMsg(msg, res.message || 'OK. Sprawdź e‑mail.', false);
+      }
+    });
+  }
 }
 
 // Login

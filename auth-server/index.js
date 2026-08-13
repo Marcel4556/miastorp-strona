@@ -89,11 +89,16 @@ function sendResetEmail(email, token) {
 
 // API: register
 app.post('/api/register', async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, username } = req.body;
   if (!email || !password) return res.status(400).json({ error: 'Brak email lub hasła' });
 
   const existing = await pool.query('SELECT id FROM users WHERE email = $1', [email.toLowerCase()]);
   if (existing.rows.length > 0) return res.status(400).json({ error: 'Konto z takim e‑mailem już istnieje' });
+
+  if (username) {
+    const existingName = await pool.query('SELECT id FROM users WHERE username = $1', [username]);
+    if (existingName.rows.length > 0) return res.status(400).json({ error: 'Ta nazwa jest już zajęta' });
+  }
 
   const id = uuidv4();
   const hashed = bcrypt.hashSync(password, 10);
@@ -101,24 +106,17 @@ app.post('/api/register', async (req, res) => {
   const now = Date.now();
 
   await pool.query(
-    'INSERT INTO users (id, email, password_hash, verification_token, created_at) VALUES ($1,$2,$3,$4,$5)',
-    [id, email.toLowerCase(), hashed, token, now]
+    'INSERT INTO users (id, email, password_hash, username, verification_token, created_at) VALUES ($1,$2,$3,$4,$5,$6)',
+    [id, email.toLowerCase(), hashed, username || null, token, now]
   );
-
-  // Konto nie musi być zweryfikowane, żeby z niego korzystać —
-  // logujemy od razu po rejestracji. Weryfikacja jest tylko zalecana
-  // (przypominamy o niej w interfejsie, patrz /api/me -> verified).
-  req.session.userId = id;
 
   try {
     await sendVerificationEmail(email, token);
+    return res.json({ ok: true, message: 'Zarejestrowano. Sprawdź e‑mail, aby zweryfikować konto.' });
   } catch (err) {
     console.error('Mail error:', err.message);
-    // Nie blokujemy rejestracji/logowania błędem wysyłki maila —
-    // użytkownik może po prostu zweryfikować konto później.
+    return res.status(500).json({ error: 'Błąd wysyłania e‑mail (skonfiguruj BREVO_API_KEY)' });
   }
-
-  return res.json({ ok: true, message: 'Konto utworzone. Jesteś zalogowany.' });
 });
 
 // API: verify
@@ -139,9 +137,7 @@ app.post('/api/login', async (req, res) => {
   const result = await pool.query('SELECT id, password_hash, verified FROM users WHERE email = $1', [email.toLowerCase()]);
   const user = result.rows[0];
   if (!user) return res.status(400).json({ error: 'Nieprawidłowe dane logowania' });
-  // Weryfikacja e‑maila nie jest wymagana do zalogowania — jest tylko
-  // zalecana. Niezweryfikowany użytkownik zobaczy o tym przypomnienie
-  // w interfejsie (na podstawie flagi `verified` z /api/me).
+  if (!user.verified) return res.status(403).json({ error: 'Konto niezweryfikowane' });
   const ok = bcrypt.compareSync(password, user.password_hash);
   if (!ok) return res.status(400).json({ error: 'Nieprawidłowe dane logowania' });
   req.session.userId = user.id;
@@ -186,33 +182,10 @@ app.post('/api/reset-password', async (req, res) => {
   res.json({ ok: true });
 });
 
-// API: resend verification email (dla zalogowanego, ale niezweryfikowanego konta)
-app.post('/api/resend-verification', async (req, res) => {
-  if (!req.session.userId) return res.status(401).json({ error: 'Nie jesteś zalogowany' });
-  const result = await pool.query('SELECT id, email, verified, verification_token FROM users WHERE id = $1', [req.session.userId]);
-  const user = result.rows[0];
-  if (!user) return res.status(401).json({ error: 'Nie jesteś zalogowany' });
-  if (user.verified) return res.json({ ok: true, message: 'Konto jest już zweryfikowane.' });
-
-  let token = user.verification_token;
-  if (!token) {
-    token = uuidv4();
-    await pool.query('UPDATE users SET verification_token = $1 WHERE id = $2', [token, user.id]);
-  }
-
-  try {
-    await sendVerificationEmail(user.email, token);
-    return res.json({ ok: true, message: 'Wysłano ponownie link weryfikacyjny.' });
-  } catch (err) {
-    console.error('Mail error:', err.message);
-    return res.status(500).json({ error: 'Błąd wysyłania e‑mail' });
-  }
-});
-
 // API: current user
 app.get('/api/me', async (req, res) => {
   if (!req.session.userId) return res.json({ user: null });
-  const result = await pool.query('SELECT id, email, verified FROM users WHERE id = $1', [req.session.userId]);
+  const result = await pool.query('SELECT id, email, username, verified FROM users WHERE id = $1', [req.session.userId]);
   const user = result.rows[0];
   if (!user) return res.json({ user: null });
   res.json({ user });
