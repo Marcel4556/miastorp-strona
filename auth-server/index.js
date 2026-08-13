@@ -3,7 +3,6 @@ const express = require('express');
 const path = require('path');
 const bcrypt = require('bcryptjs');
 const { v4: uuidv4 } = require('uuid');
-const nodemailer = require('nodemailer');
 const session = require('express-session');
 const pgSession = require('connect-pg-simple')(session);
 const { pool, init } = require('./db');
@@ -31,25 +30,46 @@ app.use(session({
 // Serve the static site (parent folder)
 app.use(express.static(path.join(__dirname, '..')));
 
-// Nodemailer transporter
-let transporter = null;
-if (process.env.SMTP_HOST && process.env.SMTP_USER) {
-  transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT) : 587,
-    secure: process.env.SMTP_SECURE === 'true',
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS
-    }
+// Wysyłka maili przez Brevo HTTP API (port 443) zamiast SMTP (port 587),
+// bo Render.com blokuje wychodzące porty SMTP na wszystkich planach.
+// Wymaga BREVO_API_KEY w .env (klucz API, NIE klucz SMTP).
+function parseFromHeader(raw) {
+  // "Miasto RP <no-reply@miastorp.pl>" -> { name, email }
+  const match = /^\s*"?([^"<]*)"?\s*<([^>]+)>\s*$/.exec(raw || '');
+  if (match) return { name: match[1].trim() || undefined, email: match[2].trim() };
+  return { email: raw || 'no-reply@example.com' };
+}
+
+async function sendViaBrevoApi({ to, subject, text, html }) {
+  const apiKey = process.env.BREVO_API_KEY;
+  if (!apiKey) throw new Error('Brak BREVO_API_KEY w .env');
+
+  const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+    method: 'POST',
+    headers: {
+      'accept': 'application/json',
+      'api-key': apiKey,
+      'content-type': 'application/json'
+    },
+    body: JSON.stringify({
+      sender: parseFromHeader(process.env.EMAIL_FROM),
+      to: [{ email: to }],
+      subject,
+      textContent: text,
+      htmlContent: html
+    })
   });
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    throw new Error(`Brevo API error ${res.status}: ${body}`);
+  }
+  return res.json();
 }
 
 function sendVerificationEmail(email, token) {
-  if (!transporter) return Promise.reject(new Error('No SMTP configured'));
   const link = `${BASE_URL}/api/verify?token=${token}`;
-  return transporter.sendMail({
-    from: process.env.EMAIL_FROM || 'no-reply@example.com',
+  return sendViaBrevoApi({
     to: email,
     subject: 'Weryfikacja konta',
     text: `Kliknij w link, aby potwierdzić konto: ${link}`,
@@ -58,10 +78,8 @@ function sendVerificationEmail(email, token) {
 }
 
 function sendResetEmail(email, token) {
-  if (!transporter) return Promise.reject(new Error('No SMTP configured'));
   const link = `${BASE_URL}/reset-password.html?token=${token}`;
-  return transporter.sendMail({
-    from: process.env.EMAIL_FROM || 'no-reply@example.com',
+  return sendViaBrevoApi({
     to: email,
     subject: 'Resetowanie hasła',
     text: `Aby zresetować hasło, użyj tego linku: ${link}`,
@@ -92,7 +110,7 @@ app.post('/api/register', async (req, res) => {
     return res.json({ ok: true, message: 'Zarejestrowano. Sprawdź e‑mail, aby zweryfikować konto.' });
   } catch (err) {
     console.error('Mail error:', err.message);
-    return res.status(500).json({ error: 'Błąd wysyłania e‑mail (skonfiguruj SMTP)' });
+    return res.status(500).json({ error: 'Błąd wysyłania e‑mail (skonfiguruj BREVO_API_KEY)' });
   }
 });
 
