@@ -19,7 +19,10 @@ if (regForm) {
     msg.textContent = '';
     const res = await postJSON('/api/register', { email, password });
     if (res.error) setMsg(msg, res.error, true);
-    else setMsg(msg, res.message || 'OK. Sprawdź e‑mail.', false);
+    else {
+      setMsg(msg, res.message || 'Konto utworzone. Jesteś zalogowany.', false);
+      setTimeout(() => window.location.href = '/start.html', 800);
+    }
   });
 }
 

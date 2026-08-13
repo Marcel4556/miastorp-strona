@@ -105,13 +105,20 @@ app.post('/api/register', async (req, res) => {
     [id, email.toLowerCase(), hashed, token, now]
   );
 
+  // Konto nie musi być zweryfikowane, żeby z niego korzystać —
+  // logujemy od razu po rejestracji. Weryfikacja jest tylko zalecana
+  // (przypominamy o niej w interfejsie, patrz /api/me -> verified).
+  req.session.userId = id;
+
   try {
     await sendVerificationEmail(email, token);
-    return res.json({ ok: true, message: 'Zarejestrowano. Sprawdź e‑mail, aby zweryfikować konto.' });
   } catch (err) {
     console.error('Mail error:', err.message);
-    return res.status(500).json({ error: 'Błąd wysyłania e‑mail (skonfiguruj BREVO_API_KEY)' });
+    // Nie blokujemy rejestracji/logowania błędem wysyłki maila —
+    // użytkownik może po prostu zweryfikować konto później.
   }
+
+  return res.json({ ok: true, message: 'Konto utworzone. Jesteś zalogowany.' });
 });
 
 // API: verify
@@ -132,7 +139,9 @@ app.post('/api/login', async (req, res) => {
   const result = await pool.query('SELECT id, password_hash, verified FROM users WHERE email = $1', [email.toLowerCase()]);
   const user = result.rows[0];
   if (!user) return res.status(400).json({ error: 'Nieprawidłowe dane logowania' });
-  if (!user.verified) return res.status(403).json({ error: 'Konto niezweryfikowane' });
+  // Weryfikacja e‑maila nie jest wymagana do zalogowania — jest tylko
+  // zalecana. Niezweryfikowany użytkownik zobaczy o tym przypomnienie
+  // w interfejsie (na podstawie flagi `verified` z /api/me).
   const ok = bcrypt.compareSync(password, user.password_hash);
   if (!ok) return res.status(400).json({ error: 'Nieprawidłowe dane logowania' });
   req.session.userId = user.id;
@@ -175,6 +184,29 @@ app.post('/api/reset-password', async (req, res) => {
   const hashed = bcrypt.hashSync(password, 10);
   await pool.query('UPDATE users SET password_hash = $1, reset_token = NULL WHERE id = $2', [hashed, user.id]);
   res.json({ ok: true });
+});
+
+// API: resend verification email (dla zalogowanego, ale niezweryfikowanego konta)
+app.post('/api/resend-verification', async (req, res) => {
+  if (!req.session.userId) return res.status(401).json({ error: 'Nie jesteś zalogowany' });
+  const result = await pool.query('SELECT id, email, verified, verification_token FROM users WHERE id = $1', [req.session.userId]);
+  const user = result.rows[0];
+  if (!user) return res.status(401).json({ error: 'Nie jesteś zalogowany' });
+  if (user.verified) return res.json({ ok: true, message: 'Konto jest już zweryfikowane.' });
+
+  let token = user.verification_token;
+  if (!token) {
+    token = uuidv4();
+    await pool.query('UPDATE users SET verification_token = $1 WHERE id = $2', [token, user.id]);
+  }
+
+  try {
+    await sendVerificationEmail(user.email, token);
+    return res.json({ ok: true, message: 'Wysłano ponownie link weryfikacyjny.' });
+  } catch (err) {
+    console.error('Mail error:', err.message);
+    return res.status(500).json({ error: 'Błąd wysyłania e‑mail' });
+  }
 });
 
 // API: current user

@@ -76,16 +76,81 @@
       .then(({ user }) => {
         if (!user) return;
         registerLink.remove();
+
+        // Stan zalogowania: pokazujemy "Zalogowany" + e‑mail zamiast
+        // przycisków "Zaloguj się" / "Zarejestruj się". Kliknięcie wylogowuje.
         loginLink.className = 'nav-account';
-        loginLink.textContent = `Wyloguj (${user.email})`;
         loginLink.href = '#';
+        loginLink.title = 'Kliknij, aby się wylogować';
+        loginLink.textContent = '';
+
+        const status = document.createElement('span');
+        status.className = 'nav-account-label';
+        status.textContent = 'Zalogowany: ';
+
+        const emailEl = document.createElement('strong');
+        emailEl.className = 'nav-account-email';
+        emailEl.textContent = user.email;
+
+        loginLink.append(status, emailEl);
         loginLink.addEventListener('click', async (e) => {
           e.preventDefault();
           await fetch('/api/logout', { method: 'POST' });
           window.location.reload();
         });
+
+        // Konto nie musi być zweryfikowane, żeby z niego korzystać,
+        // ale przypominamy o weryfikacji, jeśli jesteśmy na takim koncie.
+        if (!user.verified) showVerifyBanner();
       })
       .catch(() => {}); // auth-server nieuruchomiony lub niedostępny — przyciski zostają jako Zaloguj/Zarejestruj
+  }
+
+  function showVerifyBanner() {
+    if (document.querySelector('.verify-banner')) return;
+
+    const banner = document.createElement('div');
+    banner.className = 'verify-banner';
+
+    const text = document.createElement('span');
+    text.textContent = 'Twoje konto nie jest jeszcze zweryfikowane. Sprawdź skrzynkę e‑mail albo ';
+
+    const resend = document.createElement('button');
+    resend.type = 'button';
+    resend.className = 'verify-banner-btn';
+    resend.textContent = 'wyślij link ponownie';
+    resend.addEventListener('click', async () => {
+      resend.disabled = true;
+      const original = resend.textContent;
+      resend.textContent = 'Wysyłanie…';
+      try {
+        const res = await fetch('/api/resend-verification', { method: 'POST' });
+        const data = await res.json().catch(() => ({}));
+        resend.textContent = data.ok ? 'Wysłano ✓' : (data.error || 'Błąd wysyłania');
+      } catch {
+        resend.textContent = 'Błąd wysyłania';
+      }
+      setTimeout(() => { resend.disabled = false; resend.textContent = original; }, 4000);
+    });
+
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.className = 'verify-banner-close';
+    close.setAttribute('aria-label', 'Zamknij powiadomienie');
+    close.textContent = '×';
+    close.addEventListener('click', () => banner.remove());
+
+    banner.append(text, resend, close);
+    document.body.prepend(banner);
+
+    // .site-header jest position:absolute (nachodzi na hero), więc trzeba
+    // dosunąć go w dół o wysokość banera, żeby się nie nakładały.
+    const header = document.querySelector('.site-header');
+    const adjustHeaderOffset = () => {
+      if (header) header.style.top = banner.offsetHeight + 'px';
+    };
+    adjustHeaderOffset();
+    window.addEventListener('resize', adjustHeaderOffset);
   }
 
   menuButton.addEventListener('click', () => {
